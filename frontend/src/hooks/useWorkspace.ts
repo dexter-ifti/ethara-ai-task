@@ -4,11 +4,13 @@ import { createApi } from '../utils/api'
 
 export function useWorkspace(
   accessToken: string,
+  canManage: boolean,
   saveSession: (token: string, user: User) => void,
   clearSession: () => void,
 ) {
   const [projects, setProjects] = useState<Project[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [comments, setComments] = useState<Comment[]>([])
   const [dashboard, setDashboard] = useState<Dashboard | null>(null)
   const [activeProjectId, setActiveProjectId] = useState('')
@@ -32,15 +34,17 @@ export function useWorkspace(
     setMessage('')
 
     try {
-      const [projectData, taskData, dashboardData] = await Promise.all([
+      const [projectData, taskData, dashboardData, userData] = await Promise.all([
         api<{ projects: Project[] }>('/projects'),
         api<{ tasks: Task[] }>('/tasks'),
         api<{ dashboard: Dashboard }>('/dashboard'),
+        canManage ? api<{ users: User[] }>('/users') : Promise.resolve({ users: [] }),
       ])
 
       setProjects(projectData.projects)
       setTasks(taskData.tasks)
       setDashboard(dashboardData.dashboard)
+      setUsers(userData.users)
       setActiveProjectId((current) => current || projectData.projects[0]?._id || '')
       setActiveTaskId((current) => current || taskData.tasks[0]?._id || '')
     } catch (error) {
@@ -48,7 +52,7 @@ export function useWorkspace(
     } finally {
       setLoading(false)
     }
-  }, [api])
+  }, [api, canManage])
 
   useEffect(() => {
     if (!accessToken) return
@@ -92,6 +96,7 @@ export function useWorkspace(
   const reset = useCallback(() => {
     setProjects([])
     setTasks([])
+    setUsers([])
     setDashboard(null)
     setComments([])
   }, [])
@@ -99,6 +104,7 @@ export function useWorkspace(
   return {
     projects,
     tasks,
+    users,
     comments,
     setComments,
     dashboard,

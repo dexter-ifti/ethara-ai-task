@@ -9,11 +9,13 @@ import type { AuthMode, Comment, TaskStatus, User } from './types'
 function App() {
   const { accessToken, currentUser, saveSession, clearSession } = useAuth()
   const [authMode, setAuthMode] = useState<AuthMode>('login')
+  const canManage = currentUser?.role === 'admin' || currentUser?.role === 'project_manager'
 
-  const workspace = useWorkspace(accessToken, saveSession, clearSession)
+  const workspace = useWorkspace(accessToken, canManage, saveSession, clearSession)
   const {
     projects,
     tasks,
+    users,
     comments,
     dashboard,
     activeProject,
@@ -30,8 +32,6 @@ function App() {
     setActiveTaskId,
     reset,
   } = workspace
-
-  const canManage = currentUser?.role === 'admin' || currentUser?.role === 'project_manager'
 
   async function handleAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -74,10 +74,7 @@ function App() {
   async function handleCreateProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const members = String(form.get('members') ?? '')
-      .split(',')
-      .map((value) => value.trim())
-      .filter(Boolean)
+    const members = form.getAll('members').map(String).filter(Boolean)
 
     await mutate(() =>
       api('/projects', {
@@ -162,6 +159,7 @@ function App() {
       currentUser={currentUser}
       projects={projects}
       tasks={tasks}
+      users={users}
       comments={comments}
       dashboard={dashboard}
       activeProject={activeProject}

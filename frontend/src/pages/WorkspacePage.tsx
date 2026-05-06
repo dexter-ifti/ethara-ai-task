@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Empty } from '../components/Empty'
 import { Field } from '../components/Field'
@@ -11,6 +12,7 @@ type WorkspacePageProps = {
   currentUser: User
   projects: Project[]
   tasks: Task[]
+  users: User[]
   comments: Comment[]
   dashboard: Dashboard | null
   activeProject: Project | undefined
@@ -32,6 +34,7 @@ export function WorkspacePage({
   currentUser,
   projects,
   tasks,
+  users,
   comments,
   dashboard,
   activeProject,
@@ -48,6 +51,41 @@ export function WorkspacePage({
   onStatusChange,
   onAddComment,
 }: WorkspacePageProps) {
+  const [taskProjectId, setTaskProjectId] = useState(projects[0]?._id ?? '')
+  const [taskAssigneeId, setTaskAssigneeId] = useState('')
+
+  useEffect(() => {
+    if (!projects.length) {
+      setTaskProjectId('')
+      setTaskAssigneeId('')
+      return
+    }
+
+    setTaskProjectId((current) => (projects.some((project) => project._id === current) ? current : projects[0]._id))
+  }, [projects])
+
+  useEffect(() => {
+    if (!activeProject) return
+    setTaskProjectId(activeProject._id)
+    setTaskAssigneeId('')
+  }, [activeProject])
+
+  const taskProject = useMemo(
+    () => projects.find((project) => project._id === taskProjectId) ?? projects[0],
+    [projects, taskProjectId],
+  )
+
+  const taskAssignableUsers = useMemo(() => {
+    const memberIds = new Set((taskProject?.members ?? []).map((member) => member._id))
+    return users.filter((user) => memberIds.has(user._id))
+  }, [taskProject, users])
+
+  useEffect(() => {
+    if (!taskAssignableUsers.some((user) => user._id === taskAssigneeId)) {
+      setTaskAssigneeId('')
+    }
+  }, [taskAssignableUsers, taskAssigneeId])
+
   return (
     <main className="min-h-screen bg-soft text-ink">
       <header className="border-b border-line bg-paper">
@@ -116,7 +154,16 @@ export function WorkspacePage({
                 <Field label="Title" name="title" placeholder="Design dashboard cards" required />
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium">Project</span>
-                  <select name="project" required className="h-11 w-full rounded-md border border-line bg-white px-3 outline-blue">
+                  <select
+                    name="project"
+                    required
+                    value={taskProjectId}
+                    onChange={(event) => {
+                      setTaskProjectId(event.target.value)
+                      setTaskAssigneeId('')
+                    }}
+                    className="h-11 w-full rounded-md border border-line bg-white px-3 outline-blue"
+                  >
                     {projects.map((project) => (
                       <option key={project._id} value={project._id}>
                         {project.name}
@@ -124,7 +171,22 @@ export function WorkspacePage({
                     ))}
                   </select>
                 </label>
-                <Field label="Assign to user id" name="assignedTo" placeholder="Mongo user id" />
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium">Assign to</span>
+                  <select
+                    name="assignedTo"
+                    value={taskAssigneeId}
+                    onChange={(event) => setTaskAssigneeId(event.target.value)}
+                    className="h-11 w-full rounded-md border border-line bg-white px-3 outline-blue"
+                  >
+                    <option value="">Unassigned</option>
+                    {taskAssignableUsers.map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name} ({user.email})
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <Field label="Due date" name="dueDate" type="date" />
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium">Priority</span>
@@ -200,7 +262,26 @@ export function WorkspacePage({
                   <span className="mb-2 block text-sm font-medium">Description</span>
                   <textarea name="description" rows={3} className="w-full rounded-md border border-line bg-white px-3 py-2 outline-blue" />
                 </label>
-                <Field label="Member user ids" name="members" placeholder="Comma separated ids" />
+                <fieldset className="block">
+                  <legend className="mb-2 block text-sm font-medium">Members</legend>
+                  <div className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-line bg-white p-2">
+                    {users.map((user) => (
+                      <label key={user._id} className="flex items-start gap-3 rounded-md px-2 py-2 hover:bg-soft">
+                        <input
+                          name="members"
+                          type="checkbox"
+                          value={user._id}
+                          className="mt-1 size-4 rounded border-line text-blue outline-blue"
+                        />
+                        <span>
+                          <span className="block text-sm font-medium">{user.name}</span>
+                          <span className="block text-xs text-zinc-500">{user.email}</span>
+                        </span>
+                      </label>
+                    ))}
+                    {!users.length && <Empty text="No users available." />}
+                  </div>
+                </fieldset>
                 <button disabled={loading} className="h-11 w-full rounded-md bg-blue px-4 text-sm font-semibold text-white disabled:opacity-60">
                   Create project
                 </button>
