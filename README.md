@@ -299,6 +299,13 @@ http://localhost:4000/api
 | --- | --- | --- |
 | `GET` | `/dashboard` | Get workspace metrics for the current user. |
 
+### Users
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/users` | List safe user directory fields for admins and project managers. |
+| `GET` | `/users?search=:query` | Search users by name or email for project/task assignment. |
+
 ## Roles and Permissions
 
 | Role | Access |
@@ -358,7 +365,6 @@ bun run lint
 
 - Add automated backend tests for services and protected routes.
 - Add frontend integration tests for auth and workspace flows.
-- Add a user picker instead of manually entering member or assignee IDs.
 - Add task filtering by status, priority, assignee, and due date.
 - Add invite-based project membership.
 - Add audit logs for task and project changes.

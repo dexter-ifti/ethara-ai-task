@@ -10,6 +10,7 @@ import { commentRoutes } from "./routes/comment.routes.ts";
 import { dashboardRoutes } from "./routes/dashboard.routes.ts";
 import { projectRoutes } from "./routes/project.routes.ts";
 import { taskRoutes } from "./routes/task.routes.ts";
+import { userRoutes } from "./routes/user.routes.ts";
 
 export const app = express();
 
@@ -32,6 +33,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/users", userRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

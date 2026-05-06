@@ -25,5 +25,6 @@ Main routes:
 - `POST /api/comments`
 - `GET /api/comments/task/:taskId`
 - `GET /api/dashboard`
+- `GET /api/users`
 
 Run `bun run typecheck` before committing backend changes.
